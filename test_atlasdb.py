@@ -140,6 +140,49 @@ class TestInsertDocument(unittest.TestCase):
         self.assertEqual(original, original_before)
         self.assertNotIn("_id", original)
 
+class TestRetrieveDocument(unittest.TestCase):
+    """ Test retrieval of documents from AtlasDB. """
 
+    def setUp(self):
+        self.db = AtlasDB()
+
+    def test_retrieve_existing_document(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        retrieved = self.db.retrieve_document(document_id)
+
+        self.assertEqual(retrieved["name"], "sett")
+        self.assertEqual(retrieved["age"], 30)
+        self.assertEqual(retrieved["_id"], document_id)
+
+    def test_retrieve_nonexistent_document_raises_keyerror(self):
+        with self.assertRaises(KeyError):
+            self.db.retrieve_document("nonexistent-id")
+
+    def test_retrieve_with_non_string_id_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.db.retrieve_document(123)
+
+    def test_retrieve_with_empty_string_id_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            self.db.retrieve_document("")
+
+    def test_retrieve_with_none(self):
+        with self.assertRaises(TypeError):
+            self.db.retrieve_document(None)
+
+    def test_retrieve_returns_deepcopy(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        retrieved = self.db.retrieve_document(document_id)
+        retrieved["name"] = "modified"
+
+        # Ensure the original document in the database is unchanged
+        original = self.db._documents[document_id]
+        self.assertEqual(original["name"], "sett")
+
+    
 if __name__ == "__main__":
     unittest.main()

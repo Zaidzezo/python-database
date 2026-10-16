@@ -53,4 +53,11 @@ class AtlasDB:
 
         return str(_id)
 
-    
+    def retrieve_document(self, _id):
+        if not isinstance(_id, str):
+            raise TypeError("Document _id must be a string")
+        if not _id:
+            raise ValueError("Document _id cannot be empty")
+        if _id not in self._documents:
+            raise KeyError(f"Document with _id '{_id}' not found")
+        return copy.deepcopy(self._documents[_id])
