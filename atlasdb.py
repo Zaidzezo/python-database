@@ -60,4 +60,29 @@ class AtlasDB:
             raise ValueError("Document _id cannot be empty")
         if _id not in self._documents:
             raise KeyError(f"Document with _id '{_id}' not found")
+        
         return copy.deepcopy(self._documents[_id])
+
+    def update_document(self, _id, updates):
+
+        if not isinstance(_id, str):
+            raise TypeError("Document _id must be a string")
+        if not _id:
+            raise ValueError("Document _id cannot be empty")
+        if _id not in self._documents:
+            raise KeyError(f"Document with _id '{_id}' not found")
+        if not isinstance(updates, dict):
+            raise TypeError("Updates must be a dictionary")
+        if not self._is_json_compatible(updates):
+            raise TypeError("Updates must contain only JSON-compatible values")
+        if "_id" in updates:
+            raise ValueError("Updates cannot contain '_id' field")
+
+        copied = copy.deepcopy(self._documents[_id])
+        try:
+            copied.update(updates)
+            self._documents[_id] = copied
+            return copy.deepcopy(self._documents[_id])
+        except Exception as e:
+            raise ValueError(f"Failed to update document: {e}")
+    

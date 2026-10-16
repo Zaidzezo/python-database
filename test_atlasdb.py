@@ -183,6 +183,81 @@ class TestRetrieveDocument(unittest.TestCase):
         original = self.db._documents[document_id]
         self.assertEqual(original["name"], "sett")
 
-    
+class TestUpdateDocument(unittest.TestCase):
+    """Test updating documents in AtlasDB."""
+
+    def setUp(self):
+        self.db = AtlasDB()
+
+    def test_update_existing_document(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        updates = {"age": 31, "city": "New York"}
+        updated_document = self.db.update_document(document_id, updates)
+
+        self.assertEqual(updated_document["age"], 31)
+        self.assertEqual(updated_document["city"], "New York")
+        self.assertEqual(updated_document["_id"], document_id)
+
+    def test_update_nonexistent_document_raises_keyerror(self):
+        with self.assertRaises(KeyError):
+            self.db.update_document("nonexistent-id", {"age": 31})
+
+    def test_update_with_empty_updates_continues_regularly(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        updated_document = self.db.update_document(document_id, {})
+        self.assertEqual(updated_document["name"], "sett")
+        self.assertEqual(updated_document["age"], 30)
+
+    def test_update_with_non_string_id_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.db.update_document(123, {"age": 31})
+
+    def test_update_with_empty_string_id_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            self.db.update_document("", {"age": 31})
+
+    def test_update_with_none_id_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.db.update_document(None, {"age": 31})
+
+    def test_update_the_id_should_raise_ValueError(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        with self.assertRaises(ValueError):
+            self.db.update_document(document_id, {"_id": "new-id"})
+
+    def test_update_with_non_dict_updates_raises_typeerror(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        with self.assertRaises(TypeError):
+            self.db.update_document(document_id, ["age", 31])
+
+    def test_update_with_invalid_updates_raises_typeerror(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        with self.assertRaises(TypeError):
+            self.db.update_document(document_id, {"skills": {"Python", "Go"}})
+
+    def test_update_returns_deepcopy(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        updates = {"age": 31}
+        updated_document = self.db.update_document(document_id, updates)
+
+        # Modify the returned document
+        updated_document["age"] = 32
+
+        # Ensure the original document in the database is unchanged
+        original = self.db._documents[document_id]
+        self.assertEqual(original["age"], 31)
+
 if __name__ == "__main__":
     unittest.main()
