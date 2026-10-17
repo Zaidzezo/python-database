@@ -64,7 +64,6 @@ class AtlasDB:
         return copy.deepcopy(self._documents[_id])
 
     def update_document(self, _id, updates):
-
         if not isinstance(_id, str):
             raise TypeError("Document _id must be a string")
         if not _id:
@@ -86,3 +85,12 @@ class AtlasDB:
         except Exception as e:
             raise ValueError(f"Failed to update document: {e}")
     
+    def delete_document(self, _id):
+        if not isinstance(_id, str):
+            raise TypeError("Document _id must be a string")
+        if not _id:
+            raise ValueError("Document _id cannot be empty")
+        if _id not in self._documents:
+            raise KeyError(f"Document with _id '{_id}' not found")
+
+        del self._documents[_id]

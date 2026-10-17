@@ -259,5 +259,44 @@ class TestUpdateDocument(unittest.TestCase):
         original = self.db._documents[document_id]
         self.assertEqual(original["age"], 31)
 
+class TestDeleteDocument(unittest.TestCase):
+    """Test deletion of documents from AtlasDB."""
+
+    def setUp(self):
+        self.db = AtlasDB()
+
+    def test_delete_existing_document(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        self.db.delete_document(document_id)
+
+        with self.assertRaises(KeyError):
+            self.db.retrieve_document(document_id)
+
+    def test_delete_nonexistent_document_raises_keyerror(self):
+        with self.assertRaises(KeyError):
+            self.db.delete_document("nonexistent-id")
+
+    def test_delete_with_non_string_id_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.db.delete_document(123)
+
+    def test_delete_with_empty_string_id_raises_valueerror(self):
+        with self.assertRaises(ValueError):
+            self.db.delete_document("")
+
+    def test_delete_with_none_id_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.db.delete_document(None)
+
+    def test_delete_removes_document_from_storage(self):
+        document = {"name": "sett", "age": 30}
+        document_id = self.db.insert_document(document)
+
+        self.db.delete_document(document_id)
+
+        self.assertNotIn(document_id, self.db._documents)
+
 if __name__ == "__main__":
     unittest.main()
