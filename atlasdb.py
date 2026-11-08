@@ -1,96 +1,16 @@
-import uuid
-import copy
-import math
-
+from collection import Collection
 
 class AtlasDB:
     def __init__(self):
-        self._documents = {}
+        self._collections = {}
 
-    def _is_json_compatible(self, value):
-        if value is None or isinstance(value, (str, bool, int)):
-            return True
+    def collection(self, name):
+        if not isinstance(name, str):
+            raise TypeError("Collection name must be a string")
+        if not name or name != name.strip():
+            raise ValueError("Collection name cannot be empty or contain leading/trailing whitespace")
 
-        if isinstance(value, float):
-            return math.isfinite(value)
+        if name not in self._collections:
+            self._collections[name] = Collection(name)
 
-        if isinstance(value, list):
-            return all(
-                self._is_json_compatible(item)
-                for item in value
-            )
-
-        if isinstance(value, dict):
-            return all(
-                isinstance(key, str)
-                and self._is_json_compatible(item)
-                for key, item in value.items()
-            )
-
-        return False
-
-    def insert_document(self, document):
-        if type(document) is not dict:
-            raise TypeError("document should be a dictionary")
-
-        if "_id" in document:
-            raise ValueError("document should not contain '_id' field")
-
-        if not self._is_json_compatible(document):
-            raise TypeError(
-                "document must contain only JSON-compatible values"
-            )
-
-        duplicate = copy.deepcopy(document)
-
-        _id = uuid.uuid4()
-
-        while str(_id) in self._documents:
-            _id = uuid.uuid4()
-
-        duplicate["_id"] = str(_id)
-        self._documents[str(_id)] = duplicate
-
-        return str(_id)
-
-    def retrieve_document(self, _id):
-        if not isinstance(_id, str):
-            raise TypeError("Document _id must be a string")
-        if not _id:
-            raise ValueError("Document _id cannot be empty")
-        if _id not in self._documents:
-            raise KeyError(f"Document with _id '{_id}' not found")
-        
-        return copy.deepcopy(self._documents[_id])
-
-    def update_document(self, _id, updates):
-        if not isinstance(_id, str):
-            raise TypeError("Document _id must be a string")
-        if not _id:
-            raise ValueError("Document _id cannot be empty")
-        if _id not in self._documents:
-            raise KeyError(f"Document with _id '{_id}' not found")
-        if not isinstance(updates, dict):
-            raise TypeError("Updates must be a dictionary")
-        if not self._is_json_compatible(updates):
-            raise TypeError("Updates must contain only JSON-compatible values")
-        if "_id" in updates:
-            raise ValueError("Updates cannot contain '_id' field")
-
-        copied = copy.deepcopy(self._documents[_id])
-        try:
-            copied.update(updates)
-            self._documents[_id] = copied
-            return copy.deepcopy(self._documents[_id])
-        except Exception as e:
-            raise ValueError(f"Failed to update document: {e}")
-    
-    def delete_document(self, _id):
-        if not isinstance(_id, str):
-            raise TypeError("Document _id must be a string")
-        if not _id:
-            raise ValueError("Document _id cannot be empty")
-        if _id not in self._documents:
-            raise KeyError(f"Document with _id '{_id}' not found")
-
-        del self._documents[_id]
+        return self._collections[name]
