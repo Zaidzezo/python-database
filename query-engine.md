@@ -79,7 +79,6 @@ AND and OR can be combined. Nested `$or` expressions are supported. An explicit 
 
 ## 4. Matching Rules
 - Queries initially target top-level fields.
-- Nested dictionaries and lists support exact structural equality; nested-path queries are deferred.
 - Multiple conditions at the same level use AND.
 - At least one `$or` branch must match.
 - Missing fields are non-matches, not errors.

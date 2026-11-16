@@ -4,11 +4,32 @@ def validate_query(query):
     if not isinstance(query, dict):
         raise TypeError("Query must be a dictionary.")
 
-def match_query(document, query):
-    for key, value in query.items():
+def evaluate_query(document, key, value):
+    if key == "$or":
+        if not isinstance(value, list):
+            raise InvalidQueryError("$or operator requires a list of queries.")
+        return any(match_query(document, subquery) for subquery in value)
+    elif isinstance(value, dict) and all(k.startswith("$") for k in value.keys()):
+        if key not in document:
+            return False
+        for operator, operand in value.items():
+            if not apply_operator(operator, operand, document[key]):
+                return False
+        return True
+    elif isinstance(value, dict) and not all(k.startswith("$") for k in value.keys()):
+        if key not in document:
+            return False
+        return match_query(document[key], value)
+    else:
         if key not in document:
             return False
         if document[key] != value:
+            return False
+        return True
+
+def match_query(document, query):
+    for key, value in query.items():
+        if not evaluate_query(document, key, value):
             return False
     return True
 
