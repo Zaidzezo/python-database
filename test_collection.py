@@ -2,6 +2,7 @@
 import unittest
 
 from atlasdb import AtlasDB
+from exceptions import UnsupportedOperatorError
 
 
 class TestJSONCompatibility(unittest.TestCase):
@@ -346,6 +347,61 @@ class TestDeleteDocument(unittest.TestCase):
 
         self.assertEqual(stored["settings"], {"theme": "dark"})
         self.assertEqual(stored["tags"], ["database"])
+
+class TestFindDocuments(unittest.TestCase):
+    """Test Collection.find() wiring: validation, scanning, deep-copy."""
+
+    def setUp(self):
+        self.db = AtlasDB()
+        self.collection = self.db.collection("test_collection")
+        self.collection.insert_document({"name": "Zaid", "age": 25})
+        self.collection.insert_document({"name": "Sara", "age": 17})
+        self.collection.insert_document({"name": "Omar", "age": 30})
+
+    def test_find_returns_matching_documents(self):
+        results = self.collection.find({"name": "Sara"})
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "Sara")
+
+    def test_find_returns_empty_list_when_nothing_matches(self):
+        results = self.collection.find({"name": "Nobody"})
+        self.assertEqual(results, [])
+
+    def test_find_empty_query_returns_all_documents(self):
+        results = self.collection.find({})
+        self.assertEqual(len(results), 3)
+
+    def test_find_with_operators(self):
+        results = self.collection.find({"age": {"$gt": 20, "$lt": 30}})
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "Zaid")
+
+    def test_find_with_or(self):
+        results = self.collection.find(
+            {"$or": [{"name": "Sara"}, {"name": "Omar"}]}
+        )
+        names = {doc["name"] for doc in results}
+        self.assertEqual(names, {"Sara", "Omar"})
+
+    def test_find_invalid_query_type_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            self.collection.find("not a dict")
+
+    def test_find_unsupported_operator_raises_before_scanning(self):
+        with self.assertRaises(UnsupportedOperatorError):
+            self.collection.find({"age": {"$bad_op": 20}})
+
+    def test_find_validates_even_with_empty_collection(self):
+        empty_collection = self.db.collection("empty")
+        with self.assertRaises(UnsupportedOperatorError):
+            empty_collection.find({"age": {"$bad_op": 20}})
+
+    def test_find_returns_deepcopy(self):
+        results = self.collection.find({"name": "Sara"})
+        results[0]["name"] = "modified"
+
+        fresh = self.collection.find({"name": "Sara"})
+        self.assertEqual(fresh[0]["name"], "Sara")
 
 
 if __name__ == "__main__":

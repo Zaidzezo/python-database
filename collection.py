@@ -1,6 +1,9 @@
 import uuid
 import copy
 import math
+from query import validate_query, match_query
+import query
+import query
 
 class Collection:
     def __init__(self, name):
@@ -94,3 +97,11 @@ class Collection:
             raise KeyError(f"Document with _id '{_id}' not found")
 
         del self._documents[_id]
+
+    def find(self, query):
+        matching_documents = []
+        validate_query(query)
+        for doc in self._documents.values():
+            if match_query(doc, query):
+                matching_documents.append(copy.deepcopy(doc))
+        return matching_documents

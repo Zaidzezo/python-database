@@ -89,6 +89,7 @@ AND and OR can be combined. Nested `$or` expressions are supported. An explicit 
 - Incompatible stored values during ordered comparisons are non-matches.
 - Invalid comparison operands are query errors.
 - An empty query `{}` matches every document.
+- Nested dictionary values are matched using the same partial semantics as top-level fields, not exact equality.
 
 ## 5. Return Contract
 `find()` returns a Python list of complete matching document dictionaries.
