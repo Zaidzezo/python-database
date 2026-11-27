@@ -2,13 +2,12 @@ import uuid
 import copy
 import math
 from query import validate_query, match_query
-import query
-import query
+from storage import load_documents, save_documents
 
 class Collection:
     def __init__(self, name):
         self.name = name
-        self._documents = {}
+        self._documents = load_documents(name)
 
     def _is_json_compatible(self, value):
         if value is None or isinstance(value, (str, bool, int)):
@@ -53,6 +52,7 @@ class Collection:
 
         duplicate["_id"] = str(_id)
         self._documents[str(_id)] = duplicate
+        save_documents(self.name, self._documents)
 
         return str(_id)
 
@@ -63,7 +63,7 @@ class Collection:
             raise ValueError("Document _id cannot be empty")
         if _id not in self._documents:
             raise KeyError(f"Document with _id '{_id}' not found")
-        
+
         return copy.deepcopy(self._documents[_id])
 
     def update_document(self, _id, updates):
@@ -84,7 +84,9 @@ class Collection:
         try:
             copied.update(copy.deepcopy(updates))
             self._documents[_id] = copied
+            save_documents(self.name, self._documents)
             return copy.deepcopy(copied)
+        
         except Exception as e:
             raise ValueError(f"Failed to update document: {e}")
     
@@ -95,8 +97,9 @@ class Collection:
             raise ValueError("Document _id cannot be empty")
         if _id not in self._documents:
             raise KeyError(f"Document with _id '{_id}' not found")
-
-        del self._documents[_id]
+        
+        del self._documents[_id]    
+        save_documents(self.name, self._documents)
 
     def find(self, query):
         matching_documents = []
