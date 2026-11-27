@@ -44,6 +44,8 @@ def evaluate_query(document, key, value):
     elif isinstance(value, dict) and not all(k.startswith("$") for k in value.keys()):
         if key not in document:
             return False
+        if not isinstance(document[key], dict):
+            return False
         return match_query(document[key], value)
     else:
         if key not in document:

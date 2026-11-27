@@ -158,6 +158,31 @@ class TestMatchQueryOr(unittest.TestCase):
         }
         self.assertTrue(match_query(document, query))
 
+    def test_nested_query_against_string_field_is_non_match_not_error(self):
+        document = {"name": "Ali"}
+        query = {"name": {"foo": "bar"}}
+        self.assertFalse(match_query(document, query))
+
+    def test_nested_query_against_numeric_field_is_non_match_not_error(self):
+        document = {"age": 25}
+        query = {"age": {"foo": "bar"}}
+        self.assertFalse(match_query(document, query))
+
+    def test_nested_query_against_list_field_is_non_match_not_error(self):
+        document = {"tags": [1, 2, 3]}
+        query = {"tags": {"foo": "bar"}}
+        self.assertFalse(match_query(document, query))
+
+    def test_nested_query_against_none_field_is_non_match_not_error(self):
+        document = {"metadata": None}
+        query = {"metadata": {"foo": "bar"}}
+        self.assertFalse(match_query(document, query))
+
+    def test_nested_query_against_boolean_field_is_non_match_not_error(self):
+        document = {"active": True}
+        query = {"active": {"foo": "bar"}}
+        self.assertFalse(match_query(document, query))
+
 
 class TestValidateQuery(unittest.TestCase):
     """Test upfront validation: types, structure, operators, operands."""
@@ -207,6 +232,21 @@ class TestValidateQuery(unittest.TestCase):
         # there is nothing to scan. match_query is never reached.
         with self.assertRaises(UnsupportedOperatorError):
             validate_query({"age": {"$nope": 1}})
+
+    def test_top_level_and_raises_unsupportedoperatorerror(self):
+        with self.assertRaises(UnsupportedOperatorError):
+            validate_query({"$and": [{"name": "Zaid"}, {"name": "Sara"}]})
+
+    def test_or_subquery_containing_and_raises_unsupportedoperatorerror(self):
+        # $and nested inside a validated $or branch must also be caught,
+        # not just at the top level.
+        with self.assertRaises(UnsupportedOperatorError):
+            validate_query({"$or": [{"$and": [{"name": "Zaid"}]}]})
+
+    def test_arbitrary_unknown_dollar_key_raises_unsupportedoperatorerror(self):
+        # Not just $and specifically -- any unrecognized top-level $-key.
+        with self.assertRaises(UnsupportedOperatorError):
+            validate_query({"$nonexistent": "whatever"})
 
 
 class TestApplyOperator(unittest.TestCase):

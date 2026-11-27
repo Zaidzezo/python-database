@@ -428,6 +428,16 @@ class TestFindDocuments(IsolatedStorageTestCase):
         fresh = self.collection.find({"name": "Sara"})
         self.assertEqual(fresh[0]["name"], "Sara")
 
+    def test_find_with_top_level_and_raises_unsupportedoperatorerror(self):
+        with self.assertRaises(UnsupportedOperatorError):
+            self.collection.find({"$and": [{"name": "Sara"}]})
+
+    def test_find_nested_query_against_non_dict_field_returns_empty_not_error(self):
+        # "name" is a string on every document in this collection -- a
+        # nested-shaped query against it must cleanly return no matches.
+        results = self.collection.find({"name": {"foo": "bar"}})
+        self.assertEqual(results, [])
+
 
 if __name__ == "__main__":
     unittest.main()

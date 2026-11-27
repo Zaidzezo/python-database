@@ -81,14 +81,10 @@ class Collection:
             raise ValueError("Updates cannot contain '_id' field")
 
         copied = copy.deepcopy(self._documents[_id])
-        try:
-            copied.update(copy.deepcopy(updates))
-            self._documents[_id] = copied
-            save_documents(self.name, self._documents)
-            return copy.deepcopy(copied)
-        
-        except Exception as e:
-            raise ValueError(f"Failed to update document: {e}")
+        copied.update(copy.deepcopy(updates))
+        self._documents[_id] = copied
+        save_documents(self.name, self._documents)
+        return copy.deepcopy(copied)
     
     def delete_document(self, _id):
         if not isinstance(_id, str):

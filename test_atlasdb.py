@@ -1,10 +1,22 @@
-from atlasdb import AtlasDB
+import os
+import shutil
+import tempfile
 import unittest
+
+from atlasdb import AtlasDB
+
 
 class TestAtlasDB(unittest.TestCase):
     def setUp(self):
+        self._original_cwd = os.getcwd()
+        self._temp_dir = tempfile.mkdtemp()
+        os.chdir(self._temp_dir)
         self.db = AtlasDB()
-    
+
+    def tearDown(self):
+        os.chdir(self._original_cwd)
+        shutil.rmtree(self._temp_dir, ignore_errors=True)
+
     def test_collection_creation(self):
         collection_name = "test_collection"
         collection = self.db.collection(collection_name)
@@ -38,6 +50,7 @@ class TestAtlasDB(unittest.TestCase):
     def test_collection_name_whitespace(self):
         with self.assertRaises(ValueError):
             self.db.collection(" users ")
+
 
 if __name__ == "__main__":
     unittest.main()
