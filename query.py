@@ -16,6 +16,8 @@ def validate_query(query, operators=operators):
                 raise InvalidQueryError("$or operator requires a list of queries.")
             for subquery in value:
                 validate_query(subquery)
+        elif key.startswith("$"):
+            raise UnsupportedOperatorError(f"Unsupported operator: {key}")
         elif isinstance(value, dict) and all(k.startswith("$") for k in value.keys()):
             for operator, operand in value.items():
                 if operator not in operators:

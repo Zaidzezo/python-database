@@ -1,14 +1,34 @@
-
+import os
+import shutil
+import tempfile
 import unittest
 
 from atlasdb import AtlasDB
 from exceptions import UnsupportedOperatorError
 
 
-class TestJSONCompatibility(unittest.TestCase):
+class IsolatedStorageTestCase(unittest.TestCase):
+    """
+    Base class that runs each test in a fresh temp directory, so
+    data/test_collection.json never accumulates documents across
+    test methods, classes, or separate runs of the suite.
+    """
+
+    def setUp(self):
+        self._original_cwd = os.getcwd()
+        self._temp_dir = tempfile.mkdtemp()
+        os.chdir(self._temp_dir)
+
+    def tearDown(self):
+        os.chdir(self._original_cwd)
+        shutil.rmtree(self._temp_dir, ignore_errors=True)
+
+
+class TestJSONCompatibility(IsolatedStorageTestCase):
     """Test validation of JSON-compatible values."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
 
@@ -65,10 +85,11 @@ class TestJSONCompatibility(unittest.TestCase):
                 )
 
 
-class TestInsertDocument(unittest.TestCase):
+class TestInsertDocument(IsolatedStorageTestCase):
     """Test insertion of documents into a Collection."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
 
@@ -151,10 +172,11 @@ class TestInsertDocument(unittest.TestCase):
         self.assertNotIn("_id", original)
 
 
-class TestRetrieveDocument(unittest.TestCase):
+class TestRetrieveDocument(IsolatedStorageTestCase):
     """Test retrieval of documents from a Collection."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
 
@@ -195,10 +217,11 @@ class TestRetrieveDocument(unittest.TestCase):
         self.assertEqual(original["name"], "sett")
 
 
-class TestUpdateDocument(unittest.TestCase):
+class TestUpdateDocument(IsolatedStorageTestCase):
     """Test updating documents in a Collection."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
 
@@ -286,10 +309,11 @@ class TestUpdateDocument(unittest.TestCase):
         self.assertEqual(original["age"], 31)
 
 
-class TestDeleteDocument(unittest.TestCase):
+class TestDeleteDocument(IsolatedStorageTestCase):
     """Test deletion of documents from a Collection."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
 
@@ -326,7 +350,6 @@ class TestDeleteDocument(unittest.TestCase):
 
         self.assertNotIn(document_id, self.collection._documents)
 
-    
     def test_update_does_not_retain_references_to_nested_values(self):
         document_id = self.collection.insert_document(
             {"name": "sett"}
@@ -348,10 +371,12 @@ class TestDeleteDocument(unittest.TestCase):
         self.assertEqual(stored["settings"], {"theme": "dark"})
         self.assertEqual(stored["tags"], ["database"])
 
-class TestFindDocuments(unittest.TestCase):
+
+class TestFindDocuments(IsolatedStorageTestCase):
     """Test Collection.find() wiring: validation, scanning, deep-copy."""
 
     def setUp(self):
+        super().setUp()
         self.db = AtlasDB()
         self.collection = self.db.collection("test_collection")
         self.collection.insert_document({"name": "Zaid", "age": 25})
